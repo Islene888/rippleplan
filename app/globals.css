@@ -91,6 +91,9 @@ a { color: inherit; text-decoration: none; }
 .primary-action { width: 100%; border: 0; border-radius: 9px; margin-top: 20px; min-height: 44px; display: flex; justify-content: center; align-items: center; gap: 8px; background: var(--ink); color: white; font-size: 12px; font-weight: 700; cursor: pointer; transition: .2s ease; }
 .primary-action:hover { background: var(--green); transform: translateY(-1px); }
 .primary-action:disabled { cursor: wait; opacity: .76; transform: none; }
+.perturb-action { width: 100%; min-height: 38px; margin-top: 8px; padding: 0 10px; border: 1px solid #b9c8c0; border-radius: 9px; background: #eef5ef; color: var(--green); font-size: 9px; font-weight: 800; cursor: pointer; }
+.perturb-action:hover { background: #e2f1e6; border-color: #7fa18f; }
+.perturb-action span { margin-right: 6px; }
 .privacy-note { display: flex; align-items: center; justify-content: center; gap: 7px; font-size: 9px; color: #7c8582; margin: 12px 0 0; }
 .privacy-note span { color: var(--green); }
 .spinner { width: 12px; height: 12px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
@@ -102,6 +105,8 @@ a { color: inherit; text-decoration: none; }
 .risk-badge { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: 999px; background: #fff0ec; border: 1px solid #f1c2b8; color: #a73e2e; font-size: 9px; font-weight: 800; opacity: 0; transform: translateY(4px); transition: .3s ease; }
 .risk-badge.shown { opacity: 1; transform: none; }
 .risk-badge span { width: 15px; height: 15px; display: grid; place-items: center; background: var(--risk); color: white; border-radius: 50%; }
+.risk-badge.safe { color: var(--green); background: #edf8f1; border-color: #b8ddc7; }
+.risk-badge.safe span { background: var(--green); }
 .graph-canvas { height: 446px; position: relative; overflow: hidden; }
 .graph-grid { position: absolute; inset: 0; opacity: .34; background-image: radial-gradient(#9ba39f 1px, transparent 1px); background-size: 22px 22px; }
 .graph-canvas::after { content: "LIVE RULE MAP"; position: absolute; right: 16px; bottom: 12px; font: 8px ui-monospace, monospace; letter-spacing: .16em; color: #adb3b0; }

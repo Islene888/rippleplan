@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 type RunState = 'ready' | 'running' | 'complete';
+type GraphTone = 'mint' | 'risk' | 'amber' | 'blue';
 
 type EvidenceSource = {
   title: string;
@@ -56,20 +57,30 @@ const initialAnalysis: AnalysisResult = {
   elapsedMs: 0,
 };
 
-const graphNodes = [
-  { id: 'trip', eyebrow: 'Life event', title: 'Paris trip', detail: 'Nov 14–28, 2026', x: 8, y: 41, tone: 'mint', delay: 0 },
-  { id: 'passport', eyebrow: 'Personal document', title: 'Passport validity', detail: 'Expires Jan 15, 2027', x: 34, y: 16, tone: 'risk', delay: 1 },
-  { id: 'rule', eyebrow: 'Live official rule', title: 'Entry requirement', detail: '90 days after departure', x: 34, y: 67, tone: 'amber', delay: 2 },
-  { id: 'boarding', eyebrow: 'Downstream impact', title: 'Boarding readiness', detail: 'Document risk detected', x: 67, y: 18, tone: 'risk', delay: 3 },
-  { id: 'action', eyebrow: 'Safe next action', title: 'Renewal window', detail: 'Start before Sep 18', x: 67, y: 67, tone: 'blue', delay: 4 },
-] as const;
+const scenarios = {
+  original: {
+    departureDate: '2026-11-14',
+    returnDate: '2026-11-28',
+    displayDates: 'Nov 14 — Nov 28, 2026',
+    shortDates: 'Nov 14–28, 2026',
+  },
+  shifted: {
+    departureDate: '2026-09-30',
+    returnDate: '2026-10-14',
+    displayDates: 'Sep 30 — Oct 14, 2026',
+    shortDates: 'Sep 30–Oct 14, 2026',
+  },
+} as const;
 
 const edges = [
-  { left: 24, top: 49, width: 18, rotate: -24 },
-  { left: 24, top: 52, width: 18, rotate: 24 },
-  { left: 50, top: 29, width: 19, rotate: 3 },
-  { left: 50, top: 72, width: 20, rotate: -3 },
-  { left: 75, top: 48, width: 16, rotate: 90 },
+  { left: 15, top: 44, width: 19, rotate: -28 },
+  { left: 15, top: 57, width: 19, rotate: 27 },
+  { left: 38, top: 24, width: 18, rotate: 0 },
+  { left: 39, top: 64, width: 25, rotate: -48 },
+  { left: 39, top: 34, width: 25, rotate: 48 },
+  { left: 63, top: 24, width: 18, rotate: 0 },
+  { left: 63, top: 65, width: 25, rotate: -48 },
+  { left: 79, top: 37, width: 19, rotate: 90 },
 ];
 
 export default function Home() {
@@ -78,6 +89,22 @@ export default function Home() {
   const [selectedNode, setSelectedNode] = useState('passport');
   const [analysis, setAnalysis] = useState<AnalysisResult>(initialAnalysis);
   const [actionOpen, setActionOpen] = useState(false);
+  const [scenarioShifted, setScenarioShifted] = useState(false);
+
+  const scenario = scenarioShifted ? scenarios.shifted : scenarios.original;
+  const hasRisk = runState === 'complete' && analysis.shortfallDays > 0;
+  const graphNodes = useMemo(
+    () => [
+      { id: 'trip', eyebrow: 'Life event', title: 'Paris trip', detail: scenario.shortDates, x: 8, y: 50, tone: 'mint' as GraphTone, delay: 0 },
+      { id: 'passport', eyebrow: 'Personal document', title: 'Passport validity', detail: 'Expires Jan 15, 2027', x: 31, y: 24, tone: hasRisk ? 'risk' as GraphTone : 'mint' as GraphTone, delay: 1 },
+      { id: 'rule', eyebrow: 'Official rule', title: 'Entry requirement', detail: '90 days after departure', x: 31, y: 75, tone: runState === 'complete' ? (hasRisk ? 'amber' as GraphTone : 'mint' as GraphTone) : 'amber' as GraphTone, delay: 2 },
+      { id: 'eligibility', eyebrow: 'Gate 1', title: 'Entry eligibility', detail: runState === 'complete' ? (hasRisk ? '90-day gate fails' : '90-day gate passes') : 'Waiting for evidence', x: 55, y: 24, tone: hasRisk ? 'risk' as GraphTone : 'mint' as GraphTone, delay: 3 },
+      { id: 'renewal', eyebrow: 'Decision', title: 'Renewal timing', detail: runState === 'complete' ? (hasRisk ? 'Needed before booking' : 'Can be scheduled later') : 'Depends on validity', x: 55, y: 75, tone: hasRisk ? 'blue' as GraphTone : 'mint' as GraphTone, delay: 4 },
+      { id: 'booking', eyebrow: 'Gate 2', title: 'Booking records', detail: runState === 'complete' ? (hasRisk ? 'Hold non-refundable spend' : 'No document hold') : 'Depends on renewal', x: 79, y: 24, tone: hasRisk ? 'amber' as GraphTone : 'mint' as GraphTone, delay: 5 },
+      { id: 'readiness', eyebrow: 'Final outcome', title: 'Trip readiness', detail: runState === 'complete' ? (hasRisk ? 'Blocked by passport' : 'Document gate clear') : 'Awaiting ripple', x: 79, y: 75, tone: hasRisk ? 'risk' as GraphTone : 'mint' as GraphTone, delay: 6 },
+    ],
+    [hasRisk, runState, scenario.shortDates],
+  );
 
   useEffect(() => {
     if (runState !== 'running') return;
@@ -87,14 +114,16 @@ export default function Home() {
     return () => {
       timers.forEach(window.clearTimeout);
     };
-  }, [runState]);
+  }, [graphNodes, runState]);
 
   const selected = useMemo(
     () => graphNodes.find((node) => node.id === selectedNode) ?? graphNodes[1],
-    [selectedNode],
+    [graphNodes, selectedNode],
   );
 
-  const startCheck = async () => {
+  const startCheck = async (useShiftedScenario = scenarioShifted) => {
+    const nextScenario = useShiftedScenario ? scenarios.shifted : scenarios.original;
+    setScenarioShifted(useShiftedScenario);
     setActiveIndex(-1);
     setRunState('running');
     setSelectedNode('trip');
@@ -106,8 +135,8 @@ export default function Home() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           destination: 'France',
-          departureDate: '2026-11-14',
-          returnDate: '2026-11-28',
+          departureDate: nextScenario.departureDate,
+          returnDate: nextScenario.returnDate,
           passportExpiry: '2027-01-15',
           nationality: 'United States',
         }),
@@ -121,7 +150,7 @@ export default function Home() {
       setAnalysis(initialAnalysis);
     }
     setActiveIndex(graphNodes.length - 1);
-    setSelectedNode('passport');
+    setSelectedNode(useShiftedScenario ? 'readiness' : 'passport');
     setRunState('complete');
   };
 
@@ -212,11 +241,21 @@ export default function Home() {
             <label className="field-label" htmlFor="destination">Destination</label>
             <div className="fake-field" id="destination"><span>France · Schengen Area</span><b>⌄</b></div>
             <label className="field-label" htmlFor="dates">Planned travel</label>
-            <div className="fake-field" id="dates"><span>Nov 14 — Nov 28, 2026</span><b>↗</b></div>
+            <div className="fake-field" id="dates"><span>{scenario.displayDates}</span><b>↗</b></div>
 
-            <button className="primary-action" onClick={startCheck} disabled={runState === 'running'}>
+            <button className="primary-action" onClick={() => void startCheck(scenarioShifted)} disabled={runState === 'running'}>
               {runState === 'running' ? <><span className="spinner" /> Tracing ripple…</> : <><span>✦</span> Run evidence check</>}
             </button>
+            {runState === 'complete' && (
+              <button
+                className="perturb-action"
+                onClick={() => void startCheck(!scenarioShifted)}
+                disabled={runState === 'running'}
+              >
+                <span>↺</span>
+                {scenarioShifted ? 'Restore original dates' : 'What if the trip moves 45 days earlier?'}
+              </button>
+            )}
             <p className="privacy-note"><span>◆</span> No real identity data is used in this demo.</p>
           </aside>
 
@@ -224,10 +263,10 @@ export default function Home() {
             <div className="graph-heading">
               <div>
                 <div className="panel-label">DEPENDENCY GRAPH</div>
-                <h2>{runState === 'ready' ? 'Ready to trace dependencies' : runState === 'running' ? 'Tracing every consequence…' : 'One issue affects two outcomes'}</h2>
+                <h2>{runState === 'ready' ? 'Ready to trace dependencies' : runState === 'running' ? 'Tracing every consequence…' : hasRisk ? 'One issue cascades through three decisions' : 'The shifted plan clears every document gate'}</h2>
               </div>
-              <div className={`risk-badge ${runState === 'complete' ? 'shown' : ''}`}>
-                <span>!</span> 1 critical risk
+              <div className={`risk-badge ${runState === 'complete' ? 'shown' : ''} ${runState === 'complete' && !hasRisk ? 'safe' : ''}`}>
+                <span>{hasRisk ? '!' : '✓'}</span> {hasRisk ? '1 critical risk' : '0 critical risks'}
               </div>
             </div>
 
@@ -272,19 +311,19 @@ export default function Home() {
             <div className={`confidence-card ${runState === 'complete' ? 'resolved' : ''}`}>
               <div><span>Evidence confidence</span><strong>{runState === 'complete' ? `${analysis.confidence}%` : '—'}</strong></div>
               <div className="confidence-track"><i /></div>
-              <small>{runState === 'complete' ? '3 official sources agree' : 'Run a check to verify this node'}</small>
+              <small>{runState === 'complete' ? `${analysis.sources.length} official sources agree` : 'Run a check to verify this node'}</small>
             </div>
 
             <div className="reason-box">
-              <span className="reason-icon">{runState === 'complete' ? '!' : '?'}</span>
+              <span className="reason-icon">{runState === 'complete' ? (hasRisk ? '!' : '✓') : '?'}</span>
               <div>
-                <strong>{runState === 'complete' ? 'Validity buffer is too short' : 'Awaiting live verification'}</strong>
+                <strong>{runState === 'complete' ? (hasRisk ? 'Validity buffer is too short' : 'Validity gate is satisfied') : 'Awaiting live verification'}</strong>
                 <p>{runState === 'complete' ? analysis.summary : 'RipplePlan will compare the personal fact against current official guidance.'}</p>
               </div>
             </div>
 
             <div className="source-list">
-              <div className="source-title"><span>Supporting sources</span><b>{runState === 'complete' ? '3' : '0'}</b></div>
+              <div className="source-title"><span>Supporting sources</span><b>{runState === 'complete' ? analysis.sources.length : 0}</b></div>
               {analysis.sources.slice(0, 3).map((source, index) => (
                 <article key={source.url} className={runState === 'complete' ? 'source-visible' : ''} style={{ transitionDelay: `${index * 100}ms` }}>
                   <span>{index + 1}</span>
@@ -301,11 +340,20 @@ export default function Home() {
             {actionOpen && (
               <div className="action-drawer" role="dialog" aria-label="Action plan">
                 <div className="action-drawer-head"><strong>Human-approved plan</strong><button onClick={() => setActionOpen(false)} aria-label="Close action plan">×</button></div>
-                <ol>
-                  <li>Confirm the latest rule on the linked official pages.</li>
-                  <li>Check renewal timing with the passport authority.</li>
-                  <li>Delay non-refundable bookings until documents are ready.</li>
-                </ol>
+                {hasRisk ? (
+                  <ol>
+                    <li>Confirm the latest rule on the linked official pages.</li>
+                    <li>Check renewal timing with the passport authority.</li>
+                    <li>Hold non-refundable bookings until documents are ready.</li>
+                    <li>After renewal, update the passport number on booking records.</li>
+                  </ol>
+                ) : (
+                  <ol>
+                    <li>Keep the shifted itinerary while the 90-day gate remains clear.</li>
+                    <li>Recheck official guidance before non-refundable booking.</li>
+                    <li>Schedule a later passport renewal review.</li>
+                  </ol>
+                )}
                 <button className="calendar-button" onClick={exportCalendar}>Download reminder (.ics)</button>
               </div>
             )}
@@ -321,7 +369,7 @@ export default function Home() {
       </section>
 
       <section className="outcomes" aria-label="What RipplePlan proves">
-        <div><span className="outcome-number">05</span><p>dependencies traced<br /><strong>in one run</strong></p></div>
+        <div><span className="outcome-number">07</span><p>dependencies traced<br /><strong>across two decision gates</strong></p></div>
         <div><span className="outcome-number">03</span><p>official sources<br /><strong>attached to claims</strong></p></div>
         <div><span className="outcome-number">01</span><p>critical issue<br /><strong>caught before travel</strong></p></div>
         <div className="outcome-statement">A personal AI should not just remember your life.<br /><strong>It should understand what changes next.</strong></div>

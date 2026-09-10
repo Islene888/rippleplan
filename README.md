@@ -59,7 +59,9 @@ npm run lint
 npm run build
 ```
 
-The evaluation script checks the deterministic passport buffer and risk decision across clean, boundary, and at-risk cases.
+The evaluation script checks the deterministic passport buffer and risk decision across clean, boundary, at-risk, leap-year, and live-demo perturbation cases.
+
+The interface includes a **45-day trip shift** control. It reruns the same API and exact date engine, changes the sample buffer from 48 to 93 days, and propagates the result across seven nodes and two decision gates. This is an inspectable counterfactual, not a second pre-recorded animation.
 
 ## Hackathon technology
 

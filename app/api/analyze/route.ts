@@ -143,8 +143,12 @@ export async function POST(request: Request) {
   const passportExpiry = parseDate(scenario.passportExpiry, '2027-01-15');
   const bufferDays = Math.floor((passportExpiry.getTime() - returnDate.getTime()) / 86_400_000);
   const shortfallDays = Math.max(0, 90 - bufferDays);
-  const fallbackSummary = `The sample passport remains valid for only ${bufferDays} days after the planned departure—${shortfallDays} days short of the referenced rule.`;
-  const fallbackNextAction = 'Begin passport renewal before booking non-refundable travel';
+  const fallbackSummary = shortfallDays > 0
+    ? `The sample passport remains valid for only ${bufferDays} days after the planned departure—${shortfallDays} days short of the referenced rule.`
+    : `The sample passport remains valid for ${bufferDays} days after the planned departure, clearing the referenced 90-day gate by ${bufferDays - 90} days.`;
+  const fallbackNextAction = shortfallDays > 0
+    ? 'Begin passport renewal before booking non-refundable travel'
+    : 'Keep the shifted itinerary and recheck official guidance before booking';
 
   let sources = referenceSources;
   let tavily = false;

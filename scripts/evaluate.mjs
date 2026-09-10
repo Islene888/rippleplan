@@ -2,6 +2,7 @@ const day = 86_400_000;
 
 const cases = [
   ['2026-11-28', '2027-01-15', true, 'demo: 48-day buffer'],
+  ['2026-10-14', '2027-01-15', false, 'perturbation demo: 93-day buffer'],
   ['2026-01-01', '2026-04-01', false, 'exact 90-day boundary'],
   ['2026-01-01', '2026-04-02', false, '91-day clean case'],
   ['2026-02-01', '2026-05-01', true, '89-day shortfall'],
