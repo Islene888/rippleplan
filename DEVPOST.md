@@ -4,7 +4,7 @@
 
 ## Tagline
 
-Change one life event. See every deadline and requirement it affects—with live evidence.
+Change one life event. See every downstream decision it affects—with inspectable evidence.
 
 ## Track
 
@@ -22,11 +22,11 @@ RipplePlan was built to make those dependencies visible.
 
 ## What it does
 
-RipplePlan turns a personal plan and a small set of document facts into a cited dependency graph. In the public demo, a completely synthetic traveler plans a trip to France. RipplePlan:
+RipplePlan turns a personal plan and a small set of document facts into an evidence-linked dependency graph. In the public demo, a completely synthetic U.S. passport holder plans a trip to France. The focused workflow evaluates one passport-validity rule; it does not claim to decide overall entry eligibility. RipplePlan:
 
-1. calculates the number of days the sample passport remains valid after the planned return;
-2. retrieves relevant guidance from selected official domains;
-3. compares the deterministic fact with the cited requirement;
+1. calculates the exact three-calendar-month boundary after the planned Schengen exit and the sample passport's remaining-day buffer;
+2. retrieves current guidance from selected official domains in live mode, with a visibly labeled reference fallback;
+3. links that evidence to a versioned, deterministic product rule and evaluates the sample dates;
 4. propagates the risk through seven visual nodes and two downstream decision gates;
 5. explains the conclusion beside its sources; and
 6. proposes a conservative action plan that the user must review before exporting a reminder; and
@@ -36,29 +36,31 @@ The product keeps three responsibilities separate: deterministic software owns d
 
 ## How we built it
 
-- **NVIDIA Nemotron 3** generates a constrained evidence explanation from only the supplied scenario, fixed calculation, and retrieved source excerpts.
+- **NVIDIA Nemotron 3** generates a constrained evidence explanation from only the supplied scenario, fixed calculation, and retrieved source excerpts. It cannot choose or change the next action.
 - **Nebius Token Factory** provides the OpenAI-compatible inference endpoint for the NVIDIA model.
-- **Tavily Search** performs advanced, domain-constrained retrieval across official EU and U.S. government sources.
+- **Tavily Search + Extract** run in parallel: Search discovers current guidance, while Extract reads three vetted official pages. A second server-side allowlist rejects any off-domain result even if provider filtering is noisy.
 - **TypeScript and Next.js/Vinext** power the responsive interactive interface and server API.
-- A deterministic UTC date engine calculates the validity buffer and risk threshold.
+- A shared deterministic UTC date engine calculates the validity buffer and exact three-calendar-month boundary.
 - The public demo uses synthetic identity data and keeps all partner credentials on the server.
 
-When credentials or a partner API are unavailable, RipplePlan falls back to an explicitly labeled reference snapshot. It never presents cached evidence as a live search.
+When credentials or a partner API are unavailable, RipplePlan falls back to an explicitly labeled reference snapshot. A 90-second credit-protection cache is also visible in the UI as cached partner evidence, including its age.
 
 ## Challenges we ran into
 
 The hardest problem was deciding what the model should not control. Date arithmetic, threshold comparison, and source URLs must remain inspectable and reproducible. We therefore separated deterministic calculations from model-generated language and treated every retrieved webpage as untrusted evidence rather than instructions.
 
-We also constrained the hackathon scope to one complete travel-readiness workflow. This made it possible to build a coherent product experience instead of several unfinished administrative agents.
+We also constrained the hackathon scope to one complete passport-readiness workflow. This made it possible to build a coherent product experience instead of several unfinished administrative agents.
+
+During live verification we found that provider-side domain filtering can still return noisy links. We treated that as a security boundary, added independent URL validation, and paired discovery with targeted Tavily extraction rather than trusting the search response blindly.
 
 ## Accomplishments that we are proud of
 
 - Built an end-to-end interactive ripple graph rather than another chat interface.
 - Attached inspectable official sources directly to the affected graph node.
 - Added an honest live/reference provenance label.
-- Added a counterfactual control that shifts the trip 45 days earlier, recomputes the buffer from 48 to 93 days, and clears the affected gates.
+- Added a counterfactual control that shifts the trip 45 days earlier, recomputes the buffer from 48 to 93 days, and clears the affected passport-dependent gates.
 - Kept consequential actions behind a review step.
-- Passed 13/13 deterministic boundary tests, including leap-year, exact 90-day, and counterfactual demo cases.
+- Passed 13/13 cases against the same production calendar-month function, including leap-year, end-of-month, exact-boundary, and counterfactual dates.
 - Produced a Cloudflare-compatible deployment with a server-side partner integration path.
 
 ## What we learned
@@ -74,19 +76,19 @@ Provenance is most useful when it is part of the interface, not a footnote. User
 
 ## Safety note
 
-RipplePlan organizes information and links to responsible authorities. It is not legal advice, does not guarantee entry or eligibility, and does not submit applications, make purchases, or book travel.
+RipplePlan organizes information and links to responsible authorities. It is not legal advice, does not guarantee entry or eligibility, and does not submit applications, make purchases, or book travel. This demo supports only the shown U.S.-passport-to-France scenario and does not evaluate visas, stay length, passport age, or other entry conditions.
 
 ## Three-minute video outline
 
 - **0:00–0:18 — Problem:** One document change can quietly break an entire plan.
 - **0:18–0:35 — Product:** Show the synthetic traveler, travel dates, and green starting graph.
 - **0:35–1:10 — Run:** Click “Run evidence check”; show nodes propagating and turning red/amber.
-- **1:10–1:38 — Evidence:** Inspect the passport node, 48-day buffer, 42-day shortfall, and three official sources.
+- **1:10–1:38 — Evidence:** Inspect the passport-validity gate, 48-day buffer, 44-day calendar-boundary shortfall, and attached official sources.
 - **1:38–1:58 — Counterfactual:** Move the trip 45 days earlier; show the buffer rise to 93 days and the graph clear both gates.
 - **1:58–2:16 — Action control:** Restore the risky dates, open the human-approved plan, and export the calendar reminder.
-- **2:16–2:40 — Architecture:** Deterministic calculation → Tavily official-domain search → Nemotron on Nebius → cited graph.
-- **2:40–2:50 — Evaluation:** Show 13/13 boundary tests and disclose reference/live status.
-- **2:46–3:00 — Close:** “A personal AI should not just remember your life. It should understand what changes next.”
+- **2:16–2:40 — Architecture:** Versioned calendar-month rule + Tavily supporting evidence → Nemotron explanation on Nebius → evidence-linked graph.
+- **2:40–2:50 — Evaluation:** Show the 13/13 focused date-engine result and separately disclose partner live/reference status.
+- **2:50–3:00 — Close:** “A personal AI should not just remember your life. It should understand what changes next.”
 
 ## Submission checklist
 

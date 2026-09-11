@@ -1,34 +1,43 @@
-const day = 86_400_000;
+import { evaluatePassportValidity } from '../lib/passport-validity.ts';
 
 const cases = [
-  ['2026-11-28', '2027-01-15', true, 'demo: 48-day buffer'],
-  ['2026-10-14', '2027-01-15', false, 'perturbation demo: 93-day buffer'],
-  ['2026-01-01', '2026-04-01', false, 'exact 90-day boundary'],
-  ['2026-01-01', '2026-04-02', false, '91-day clean case'],
-  ['2026-02-01', '2026-05-01', true, '89-day shortfall'],
-  ['2026-03-01', '2026-06-01', false, '92-day clean case'],
-  ['2026-05-31', '2026-08-29', false, 'exact 90-day summer boundary'],
-  ['2026-05-31', '2026-08-28', true, '89-day summer shortfall'],
-  ['2026-10-15', '2027-01-13', false, 'exact 90-day year crossing'],
-  ['2026-10-15', '2027-01-12', true, '89-day year crossing'],
-  ['2028-02-28', '2028-05-28', false, 'leap-year boundary'],
-  ['2028-02-29', '2028-05-28', true, 'leap-day 89-day shortfall'],
-  ['2027-12-31', '2028-06-30', false, 'long clean buffer'],
+  ['2026-11-28', '2027-01-15', true, '2027-02-28', 'demo: calendar-month shortfall'],
+  ['2026-10-14', '2027-01-15', false, '2027-01-14', 'counterfactual: one-day cushion'],
+  ['2026-02-01', '2026-05-01', false, '2026-05-01', '89 days can be exactly three months'],
+  ['2026-02-01', '2026-04-30', true, '2026-05-01', 'one day before three-month boundary'],
+  ['2026-10-15', '2027-01-15', false, '2027-01-15', 'exact three-month year crossing'],
+  ['2026-10-15', '2027-01-14', true, '2027-01-15', '90 days can still be too short'],
+  ['2026-01-31', '2026-04-30', false, '2026-04-30', 'end-of-month clamp'],
+  ['2026-01-31', '2026-04-29', true, '2026-04-30', 'end-of-month shortfall'],
+  ['2026-11-30', '2027-02-28', false, '2027-02-28', 'non-leap February clamp'],
+  ['2026-11-30', '2027-02-27', true, '2027-02-28', 'non-leap February shortfall'],
+  ['2027-11-30', '2028-02-29', false, '2028-02-29', 'leap February clamp'],
+  ['2028-02-29', '2028-05-29', false, '2028-05-29', 'leap-day exact boundary'],
+  ['2028-02-29', '2028-05-28', true, '2028-05-29', 'leap-day shortfall'],
 ];
 
-function daysBetween(start, end) {
-  return Math.floor((new Date(`${end}T00:00:00Z`) - new Date(`${start}T00:00:00Z`)) / day);
-}
-
-const results = cases.map(([returnDate, expiryDate, expectedRisk, label]) => {
-  const bufferDays = daysBetween(returnDate, expiryDate);
-  const actualRisk = bufferDays < 90;
-  return { label, bufferDays, expectedRisk, actualRisk, pass: expectedRisk === actualRisk };
+const results = cases.map(([returnDate, expiryDate, expectedRisk, expectedRequiredExpiry, label]) => {
+  const result = evaluatePassportValidity(
+    new Date(`${returnDate}T00:00:00Z`),
+    new Date(`${expiryDate}T00:00:00Z`),
+  );
+  const actualRisk = result.shortfallDays > 0;
+  const pass = expectedRisk === actualRisk && expectedRequiredExpiry === result.requiredExpiryDate;
+  return {
+    label,
+    bufferDays: result.bufferDays,
+    requiredExpiryDate: result.requiredExpiryDate,
+    shortfallDays: result.shortfallDays,
+    cushionDays: result.cushionDays,
+    expectedRisk,
+    actualRisk,
+    pass,
+  };
 });
 
 const passed = results.filter((result) => result.pass).length;
 const report = {
-  benchmark: 'RipplePlan deterministic passport-validity gate',
+  benchmark: 'RipplePlan production calendar-month passport-validity gate',
   cases: results.length,
   passed,
   accuracy: passed / results.length,

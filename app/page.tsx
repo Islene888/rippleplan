@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { evaluatePassportValidity } from '@/lib/passport-validity';
 
 type RunState = 'ready' | 'running' | 'complete';
 type GraphTone = 'mint' | 'risk' | 'amber' | 'blue';
@@ -14,7 +15,6 @@ type EvidenceSource = {
 
 type AnalysisResult = {
   mode: 'reference' | 'live';
-  confidence: number;
   bufferDays: number;
   shortfallDays: number;
   summary: string;
@@ -22,6 +22,9 @@ type AnalysisResult = {
   sources: EvidenceSource[];
   integrations: { tavily: boolean; nemotron: boolean };
   elapsedMs: number;
+  fetchedAt: string;
+  cacheStatus: 'fresh' | 'hit' | 'coalesced';
+  evidenceAgeMs: number;
 };
 
 const referenceSources: EvidenceSource[] = [
@@ -38,24 +41,42 @@ const referenceSources: EvidenceSource[] = [
     url: 'https://eur-lex.europa.eu/eli/reg/2016/399/oj/eng',
   },
   {
-    title: 'European Commission',
-    description: 'Applying for a Schengen visa',
-    domain: 'home-affairs.ec.europa.eu',
-    url: 'https://home-affairs.ec.europa.eu/policies/schengen/visa-policy/applying-schengen-visa_en',
+    title: 'France-Visas',
+    description: 'Documents presented on arrival in France',
+    domain: 'france-visas.gouv.fr',
+    url: 'https://france-visas.gouv.fr/en/votre-arrivee-en-france',
   },
 ];
 
-const initialAnalysis: AnalysisResult = {
-  mode: 'reference',
-  confidence: 94,
-  bufferDays: 48,
-  shortfallDays: 42,
-  summary: 'The sample passport remains valid for only 48 days after the planned departure—42 days short of the referenced rule.',
-  nextAction: 'Begin passport renewal before booking non-refundable travel',
-  sources: referenceSources,
-  integrations: { tavily: false, nemotron: false },
-  elapsedMs: 0,
-};
+function createReferenceAnalysis(returnDate = '2026-11-28'): AnalysisResult {
+  const plannedExit = new Date(`${returnDate}T00:00:00Z`);
+  const passportExpiry = new Date('2027-01-15T00:00:00Z');
+  const {
+    bufferDays,
+    shortfallDays,
+    cushionDays,
+    requiredExpiryDate,
+  } = evaluatePassportValidity(plannedExit, passportExpiry);
+  return {
+    mode: 'reference',
+    bufferDays,
+    shortfallDays,
+    summary: shortfallDays > 0
+      ? `The sample passport remains valid for ${bufferDays} days after the planned Schengen exit, but expires ${shortfallDays} ${shortfallDays === 1 ? 'day' : 'days'} before the required ${requiredExpiryDate} calendar-month boundary.`
+      : `The sample passport remains valid for ${bufferDays} days after the planned Schengen exit and clears the required ${requiredExpiryDate} calendar-month boundary by ${cushionDays} ${cushionDays === 1 ? 'day' : 'days'}.`,
+    nextAction: shortfallDays > 0
+      ? 'Begin passport renewal before booking non-refundable travel'
+      : 'Keep the shifted itinerary and recheck official guidance before booking',
+    sources: referenceSources,
+    integrations: { tavily: false, nemotron: false },
+    elapsedMs: 0,
+    fetchedAt: new Date(0).toISOString(),
+    cacheStatus: 'fresh',
+    evidenceAgeMs: 0,
+  };
+}
+
+const initialAnalysis = createReferenceAnalysis();
 
 const scenarios = {
   original: {
@@ -97,11 +118,11 @@ export default function Home() {
     () => [
       { id: 'trip', eyebrow: 'Life event', title: 'Paris trip', detail: scenario.shortDates, x: 8, y: 50, tone: 'mint' as GraphTone, delay: 0 },
       { id: 'passport', eyebrow: 'Personal document', title: 'Passport validity', detail: 'Expires Jan 15, 2027', x: 31, y: 24, tone: hasRisk ? 'risk' as GraphTone : 'mint' as GraphTone, delay: 1 },
-      { id: 'rule', eyebrow: 'Official rule', title: 'Entry requirement', detail: '90 days after departure', x: 31, y: 75, tone: runState === 'complete' ? (hasRisk ? 'amber' as GraphTone : 'mint' as GraphTone) : 'amber' as GraphTone, delay: 2 },
-      { id: 'eligibility', eyebrow: 'Gate 1', title: 'Entry eligibility', detail: runState === 'complete' ? (hasRisk ? '90-day gate fails' : '90-day gate passes') : 'Waiting for evidence', x: 55, y: 24, tone: hasRisk ? 'risk' as GraphTone : 'mint' as GraphTone, delay: 3 },
+      { id: 'rule', eyebrow: 'Official rule', title: 'Entry requirement', detail: '3 calendar months after exit', x: 31, y: 75, tone: runState === 'complete' ? (hasRisk ? 'amber' as GraphTone : 'mint' as GraphTone) : 'amber' as GraphTone, delay: 2 },
+      { id: 'eligibility', eyebrow: 'Gate 1', title: 'Passport validity gate', detail: runState === 'complete' ? (hasRisk ? '3-month gate fails' : 'This gate passes') : 'Waiting for evidence', x: 55, y: 24, tone: hasRisk ? 'risk' as GraphTone : 'mint' as GraphTone, delay: 3 },
       { id: 'renewal', eyebrow: 'Decision', title: 'Renewal timing', detail: runState === 'complete' ? (hasRisk ? 'Needed before booking' : 'Can be scheduled later') : 'Depends on validity', x: 55, y: 75, tone: hasRisk ? 'blue' as GraphTone : 'mint' as GraphTone, delay: 4 },
       { id: 'booking', eyebrow: 'Gate 2', title: 'Booking records', detail: runState === 'complete' ? (hasRisk ? 'Hold non-refundable spend' : 'No document hold') : 'Depends on renewal', x: 79, y: 24, tone: hasRisk ? 'amber' as GraphTone : 'mint' as GraphTone, delay: 5 },
-      { id: 'readiness', eyebrow: 'Final outcome', title: 'Trip readiness', detail: runState === 'complete' ? (hasRisk ? 'Blocked by passport' : 'Document gate clear') : 'Awaiting ripple', x: 79, y: 75, tone: hasRisk ? 'risk' as GraphTone : 'mint' as GraphTone, delay: 6 },
+      { id: 'readiness', eyebrow: 'Final signal', title: 'Document readiness', detail: runState === 'complete' ? (hasRisk ? 'Blocked by this gate' : 'This gate clear; others unchecked') : 'Awaiting ripple', x: 79, y: 75, tone: hasRisk ? 'risk' as GraphTone : 'mint' as GraphTone, delay: 6 },
     ],
     [hasRisk, runState, scenario.shortDates],
   );
@@ -120,6 +141,38 @@ export default function Home() {
     () => graphNodes.find((node) => node.id === selectedNode) ?? graphNodes[1],
     [graphNodes, selectedNode],
   );
+
+  const usesOfficialSources = ['rule', 'eligibility', 'readiness'].includes(selected.id);
+  const selectedSources = runState === 'complete' && usesOfficialSources ? analysis.sources : [];
+  const inspector = useMemo(() => {
+    if (runState !== 'complete') {
+      return {
+        label: 'Awaiting evidence check',
+        detail: 'RipplePlan will keep the personal fact, exact calculation, retrieved evidence, and human decision separate.',
+        provenance: 'Not evaluated',
+      };
+    }
+    switch (selected.id) {
+      case 'trip':
+        return { label: 'Synthetic plan input', detail: `Demo itinerary: ${scenario.displayDates}.`, provenance: 'User-supplied fact' };
+      case 'passport':
+        return { label: 'Synthetic document fact', detail: 'The demo passport expiry is January 15, 2027.', provenance: 'User-supplied fact' };
+      case 'rule':
+        return { label: 'Official rule reference', detail: 'The passport-validity gate is checked against the linked official guidance.', provenance: `${selectedSources.length} source links` };
+      case 'eligibility':
+        return { label: hasRisk ? 'Deterministic passport gate failed' : 'Deterministic passport gate passed', detail: analysis.summary, provenance: `${selectedSources.length} sources + date engine` };
+      case 'renewal':
+        return { label: 'Human-reviewed decision', detail: analysis.nextAction, provenance: 'Conservative workflow' };
+      case 'booking':
+        return { label: 'Downstream planning guardrail', detail: hasRisk ? 'Non-refundable spending is held until the document issue is resolved.' : 'No passport-validity hold is needed for the shifted sample dates.', provenance: 'Derived product rule' };
+      default:
+        return { label: hasRisk ? 'Document signal: blocked' : 'Passport signal: clear', detail: hasRisk ? 'This passport gate propagates into renewal timing and booking readiness.' : 'The shifted itinerary clears this one passport gate; visa, stay-length, and other entry conditions are not evaluated.', provenance: `${selectedSources.length} sources + date engine` };
+    }
+  }, [analysis.nextAction, analysis.summary, hasRisk, runState, scenario.displayDates, selected.id, selectedSources.length]);
+
+  const liveIntegrationCount = Number(analysis.integrations.tavily) + Number(analysis.integrations.nemotron);
+  const runModeLabel = liveIntegrationCount === 2 ? 'LIVE RUN' : liveIntegrationCount === 1 ? 'PARTIAL LIVE' : 'REFERENCE RUN';
+  const runModeClass = liveIntegrationCount === 2 ? 'mode-live' : liveIntegrationCount === 1 ? 'mode-partial' : 'mode-reference';
 
   const startCheck = async (useShiftedScenario = scenarioShifted) => {
     const nextScenario = useShiftedScenario ? scenarios.shifted : scenarios.original;
@@ -147,10 +200,10 @@ export default function Home() {
       setAnalysis(result);
     } catch {
       await minimumAnimation;
-      setAnalysis(initialAnalysis);
+      setAnalysis(createReferenceAnalysis(nextScenario.returnDate));
     }
     setActiveIndex(graphNodes.length - 1);
-    setSelectedNode(useShiftedScenario ? 'readiness' : 'passport');
+    setSelectedNode(useShiftedScenario ? 'readiness' : 'eligibility');
     setRunState('complete');
   };
 
@@ -158,7 +211,7 @@ export default function Home() {
     const calendar = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
-      'PRODID:-//RipplePlan//Travel Readiness Demo//EN',
+      'PRODID:-//RipplePlan//Passport Readiness Demo//EN',
       'BEGIN:VEVENT',
       'UID:rippleplan-passport-renewal-demo',
       'DTSTART;VALUE=DATE:20260918',
@@ -191,16 +244,16 @@ export default function Home() {
 
       <section className="hero" id="top">
         <div className="hero-copy">
-          <div className="kicker"><span>●</span> PERSONAL AI · LIVE EVIDENCE GRAPH</div>
+          <div className="kicker"><span>●</span> PERSONAL AI · EVIDENCE GRAPH</div>
           <h1>One change.<br /><em>See the whole ripple.</em></h1>
           <p>
-            RipplePlan connects your important documents to live official rules,
-            reveals downstream risks, and gives you an evidence-backed path forward.
+            RipplePlan maps your important documents to current supporting evidence,
+            reveals downstream risks, and keeps exact decisions in inspectable rules.
           </p>
         </div>
         <div className="hero-proof" aria-label="Product principles">
           <div><strong>01</strong><span>Private by design</span></div>
-          <div><strong>02</strong><span>Every edge cited</span></div>
+          <div><strong>02</strong><span>Every rule inspectable</span></div>
           <div><strong>03</strong><span>Actions stay yours</span></div>
         </div>
       </section>
@@ -209,14 +262,14 @@ export default function Home() {
         <div className="frame-topline">
           <div>
             <span className="live-dot" />
-            <strong>Travel readiness workspace</strong>
+            <strong>Passport readiness workspace</strong>
             <span className="case-id">RP–TRAVEL–026</span>
           </div>
           <div className="engine-row">
           <span>NVIDIA Nemotron 3</span>
           <span>Nebius Token Factory</span>
-          <span>Tavily Search</span>
-          {runState === 'complete' && <span className={`mode-chip mode-${analysis.mode}`}>{analysis.mode === 'live' ? 'LIVE RUN' : 'REFERENCE RUN'}</span>}
+          <span>Tavily Search + Extract</span>
+          {runState === 'complete' && <span className={`mode-chip ${runModeClass}`}>{runModeLabel}</span>}
           </div>
         </div>
 
@@ -263,7 +316,7 @@ export default function Home() {
             <div className="graph-heading">
               <div>
                 <div className="panel-label">DEPENDENCY GRAPH</div>
-                <h2>{runState === 'ready' ? 'Ready to trace dependencies' : runState === 'running' ? 'Tracing every consequence…' : hasRisk ? 'One issue cascades through three decisions' : 'The shifted plan clears every document gate'}</h2>
+                <h2>{runState === 'ready' ? 'Ready to trace dependencies' : runState === 'running' ? 'Tracing every consequence…' : hasRisk ? 'One issue cascades through three decisions' : 'The shifted plan clears this passport gate'}</h2>
               </div>
               <div className={`risk-badge ${runState === 'complete' ? 'shown' : ''} ${runState === 'complete' && !hasRisk ? 'safe' : ''}`}>
                 <span>{hasRisk ? '!' : '✓'}</span> {hasRisk ? '1 critical risk' : '0 critical risks'}
@@ -309,22 +362,22 @@ export default function Home() {
             <div className="selection-label">Selected node</div>
             <h2>{selected.title}</h2>
             <div className={`confidence-card ${runState === 'complete' ? 'resolved' : ''}`}>
-              <div><span>Evidence confidence</span><strong>{runState === 'complete' ? `${analysis.confidence}%` : '—'}</strong></div>
-              <div className="confidence-track"><i /></div>
-              <small>{runState === 'complete' ? `${analysis.sources.length} official sources agree` : 'Run a check to verify this node'}</small>
+              <div><span>Provenance</span><strong>{runState === 'complete' ? inspector.provenance : '—'}</strong></div>
+              <div className="confidence-track"><i style={{ width: runState === 'complete' ? '100%' : '0%' }} /></div>
+              <small>{runState === 'complete' ? 'Inspectable evidence—not a legal confidence score' : 'Run a check to verify this node'}</small>
             </div>
 
             <div className="reason-box">
               <span className="reason-icon">{runState === 'complete' ? (hasRisk ? '!' : '✓') : '?'}</span>
               <div>
-                <strong>{runState === 'complete' ? (hasRisk ? 'Validity buffer is too short' : 'Validity gate is satisfied') : 'Awaiting live verification'}</strong>
-                <p>{runState === 'complete' ? analysis.summary : 'RipplePlan will compare the personal fact against current official guidance.'}</p>
+                <strong>{inspector.label}</strong>
+                <p>{inspector.detail}</p>
               </div>
             </div>
 
             <div className="source-list">
-              <div className="source-title"><span>Supporting sources</span><b>{runState === 'complete' ? analysis.sources.length : 0}</b></div>
-              {analysis.sources.slice(0, 3).map((source, index) => (
+              <div className="source-title"><span>Sources for this node</span><b>{selectedSources.length}</b></div>
+              {selectedSources.slice(0, 3).map((source, index) => (
                 <article key={source.url} className={runState === 'complete' ? 'source-visible' : ''} style={{ transitionDelay: `${index * 100}ms` }}>
                   <span>{index + 1}</span>
                   <div><strong>{source.title}</strong><p>{source.description}</p><a href={source.url} target="_blank" rel="noreferrer"><small>{source.domain} ↗</small></a></div>
@@ -349,7 +402,7 @@ export default function Home() {
                   </ol>
                 ) : (
                   <ol>
-                    <li>Keep the shifted itinerary while the 90-day gate remains clear.</li>
+                    <li>Keep the shifted itinerary while the three-calendar-month gate remains clear.</li>
                     <li>Recheck official guidance before non-refundable booking.</li>
                     <li>Schedule a later passport renewal review.</li>
                   </ol>
@@ -359,9 +412,15 @@ export default function Home() {
             )}
             {runState === 'complete' && (
               <p className="run-provenance">
-                {analysis.mode === 'live'
-                  ? `Live partner run · ${analysis.elapsedMs} ms · Tavily + Nemotron`
-                  : 'Reference run · live partner keys not configured'}
+                {analysis.cacheStatus === 'hit' && liveIntegrationCount > 0
+                  ? `Cached partner evidence · ${Math.round(analysis.evidenceAgeMs / 1000)}s old · ${analysis.integrations.tavily ? 'Tavily' : ''}${analysis.integrations.tavily && analysis.integrations.nemotron ? ' + ' : ''}${analysis.integrations.nemotron ? 'Nemotron' : ''}`
+                  : analysis.cacheStatus === 'coalesced' && liveIntegrationCount > 0
+                    ? `Shared fresh partner run · response ${analysis.elapsedMs} ms · ${analysis.integrations.tavily ? 'Tavily' : ''}${analysis.integrations.tavily && analysis.integrations.nemotron ? ' + ' : ''}${analysis.integrations.nemotron ? 'Nemotron' : ''}`
+                    : liveIntegrationCount === 2
+                    ? `Fresh partner run · response ${analysis.elapsedMs} ms · Tavily + Nemotron`
+                    : liveIntegrationCount === 1
+                      ? `Partial fresh run · ${analysis.integrations.tavily ? 'Tavily live; Nemotron fallback' : 'Nemotron live; reference sources'}`
+                    : 'Reference run · partner services not configured or unavailable'}
               </p>
             )}
           </aside>
@@ -369,8 +428,8 @@ export default function Home() {
       </section>
 
       <section className="outcomes" aria-label="What RipplePlan proves">
-        <div><span className="outcome-number">07</span><p>dependencies traced<br /><strong>across two decision gates</strong></p></div>
-        <div><span className="outcome-number">03</span><p>official sources<br /><strong>attached to claims</strong></p></div>
+        <div><span className="outcome-number">07</span><p>graph nodes traced<br /><strong>across two decision gates</strong></p></div>
+        <div><span className="outcome-number">{String(analysis.sources.length).padStart(2, '0')}</span><p>official sources<br /><strong>attached to this rule</strong></p></div>
         <div><span className="outcome-number">01</span><p>critical issue<br /><strong>caught before travel</strong></p></div>
         <div className="outcome-statement">A personal AI should not just remember your life.<br /><strong>It should understand what changes next.</strong></div>
       </section>
