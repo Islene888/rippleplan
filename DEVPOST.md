@@ -4,7 +4,7 @@
 
 ## Tagline
 
-Change one life event. See every downstream decision it affects—with inspectable evidence.
+Personal AI that shows its work—trace one life change through every downstream decision with inspectable evidence.
 
 ## Track
 
