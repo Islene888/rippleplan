@@ -430,7 +430,10 @@ export default function Home() {
       <section className="outcomes" aria-label="What RipplePlan proves">
         <div><span className="outcome-number">07</span><p>graph nodes traced<br /><strong>across two decision gates</strong></p></div>
         <div><span className="outcome-number">{String(analysis.sources.length).padStart(2, '0')}</span><p>official sources<br /><strong>attached to this rule</strong></p></div>
-        <div><span className="outcome-number">01</span><p>critical issue<br /><strong>caught before travel</strong></p></div>
+        <div>
+          <span className="outcome-number">{runState === 'complete' ? (hasRisk ? '01' : '00') : '—'}</span>
+          <p>{runState === 'complete' ? (hasRisk ? 'critical issue' : 'issues in this gate') : 'risk result'}<br /><strong>{runState === 'complete' ? (hasRisk ? 'caught before travel' : 'after the date shift') : 'pending evidence check'}</strong></p>
+        </div>
         <div className="outcome-statement">A personal AI should not just remember your life.<br /><strong>It should understand what changes next.</strong></div>
       </section>
 
