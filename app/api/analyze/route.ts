@@ -18,8 +18,20 @@ type EvidenceSource = {
   url: string;
 };
 
+type SemanticCheck = {
+  evidenceSupport: 'supports_rule';
+  summary: string;
+  model: string;
+  excerpt: {
+    title: string;
+    domain: string;
+    text: string;
+  };
+  evidenceCount: number;
+};
+
 type AnalysisResult = {
-  mode: 'live' | 'reference';
+  mode: 'live' | 'partial' | 'reference';
   bufferDays: number;
   shortfallDays: number;
   summary: string;
@@ -30,6 +42,7 @@ type AnalysisResult = {
   fetchedAt: string;
   cacheStatus: 'fresh' | 'hit' | 'coalesced';
   evidenceAgeMs: number;
+  semanticCheck: SemanticCheck | null;
 };
 
 type ValidatedScenario = {
@@ -447,7 +460,7 @@ function parseNemotronOutput(value: unknown, hasShortfall: boolean) {
   ) {
     throw new Error('Nemotron output conflicted with deterministic facts');
   }
-  return summary;
+  return { evidenceSupport: 'supports_rule' as const, summary };
 }
 
 async function reasonWithNemotron(
@@ -528,7 +541,10 @@ async function reasonWithNemotron(
     throw new Error('Nemotron response was incomplete');
   }
   if (!isRecord(choice.message)) throw new Error('Nemotron response did not contain a message');
-  return parseNemotronOutput(choice.message.content, shortfallDays > 0);
+  return {
+    ...parseNemotronOutput(choice.message.content, shortfallDays > 0),
+    model,
+  };
 }
 
 function deterministicResult(returnDate: Date, passportExpiry: Date) {
@@ -550,7 +566,7 @@ function deterministicResult(returnDate: Date, passportExpiry: Date) {
     : `The sample passport remains valid for ${bufferDays} days after the planned Schengen exit and clears the required ${requiredExpiryDate} calendar-month boundary by ${cushionDays} ${cushionDays === 1 ? 'day' : 'days'}.`;
   const nextAction = shortfallDays > 0
     ? 'Begin passport renewal before booking non-refundable travel'
-    : 'Keep the shifted itinerary and recheck official guidance before booking';
+    : 'This passport gate is clear; recheck official guidance before non-refundable booking';
   return { bufferDays, shortfallDays, requiredExpiryDate, summary, nextAction };
 }
 
@@ -563,7 +579,8 @@ async function analyzeScenario(
   let sources = referenceSources;
   let tavily = false;
   let nemotron = false;
-  let summary = deterministic.summary;
+  const summary = deterministic.summary;
+  let semanticCheck: SemanticCheck | null = null;
   const nextAction = deterministic.nextAction;
 
   if (tavilyKey) {
@@ -600,7 +617,18 @@ async function analyzeScenario(
         deterministic.requiredExpiryDate,
         nebiusKey,
       );
-      summary = cleanText(`${deterministic.summary} ${reasoned}`, deterministic.summary, 420);
+      const excerpt = sources[0];
+      semanticCheck = {
+        evidenceSupport: reasoned.evidenceSupport,
+        summary: reasoned.summary,
+        model: cleanText(reasoned.model, 'NVIDIA model', 100),
+        excerpt: {
+          title: excerpt.title,
+          domain: excerpt.domain,
+          text: excerpt.description,
+        },
+        evidenceCount: sources.length,
+      };
       nemotron = true;
     } catch (error) {
       logPartnerFallback('Nemotron', error);
@@ -609,7 +637,7 @@ async function analyzeScenario(
   }
 
   return {
-    mode: tavily && nemotron ? 'live' : 'reference',
+    mode: tavily && nemotron ? 'live' : tavily || nemotron ? 'partial' : 'reference',
     bufferDays: deterministic.bufferDays,
     shortfallDays: deterministic.shortfallDays,
     summary,
@@ -620,6 +648,7 @@ async function analyzeScenario(
     fetchedAt: new Date().toISOString(),
     cacheStatus: 'fresh',
     evidenceAgeMs: 0,
+    semanticCheck,
   };
 }
 
@@ -705,6 +734,7 @@ export async function POST(request: Request) {
       fetchedAt: new Date().toISOString(),
       cacheStatus: 'fresh',
       evidenceAgeMs: 0,
+      semanticCheck: null,
     };
   } finally {
     if (!coalesced) inFlightAnalyses.delete(cacheKey);
