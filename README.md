@@ -14,7 +14,7 @@ Most assistants return a checklist. RipplePlan returns an **evidence-linked depe
 
 - Personal facts and plans form the starting nodes.
 - Tavily Search discovers current guidance while targeted Tavily Extract reads up to three vetted official pages; the results are merged, relevance-checked, and a server-side allowlist rejects every off-domain link.
-- NVIDIA Nemotron on Nebius Token Factory performs a bounded semantic support check over varied official excerpts, then produces a constrained explanation.
+- NVIDIA Nemotron-3.5 Lightning (`nvidia/Nemotron-3_5-Lightning`) on Nebius Token Factory performs a bounded semantic support check over varied official excerpts, then produces a constrained explanation.
 - A versioned deterministic rule owns three-calendar-month arithmetic and never delegates that calculation or the next action to retrieval or a model.
 - Every consequential action remains behind explicit human approval.
 
@@ -30,7 +30,7 @@ Versioned deterministic rule ---- computes the calendar-month gate
         |
         +---- Tavily Search ---- official-domain evidence
         |                              |
-        +---- Nebius Token Factory / NVIDIA Nemotron
+        +---- Nebius Token Factory / Nemotron-3.5 Lightning
                                        |
                                        v
                           constrained explanation JSON
@@ -51,7 +51,7 @@ npm run dev
 
 The interactive demo is available at `http://localhost:3000`.
 
-To activate live partner calls, set `TAVILY_API_KEY`, `NEBIUS_API_KEY`, and the exact current `NEBIUS_MODEL` ID shown by the Token Factory model list. Keys remain server-side.
+To activate live partner calls, set `TAVILY_API_KEY`, `NEBIUS_API_KEY`, and `NEBIUS_MODEL=nvidia/Nemotron-3_5-Lightning`. This exact model ID was verified in the production demo; keys remain server-side.
 
 ## Validate
 
@@ -61,13 +61,15 @@ npm run lint
 npm run build
 ```
 
-The evaluation script imports the same production calendar-month function used by the API and checks 13 clean, boundary, at-risk, end-of-month, leap-year, and demo-perturbation cases. It is a focused date-engine test, not an end-to-end partner API benchmark.
+The evaluation script imports the same production calendar-month function used by the API and passes 13/13 clean, boundary, at-risk, end-of-month, leap-year, and demo-perturbation cases. It also passes 8/8 regression cases for the server-side guard that permits the trusted three-month phrase while rejecting additional numeric claims in model summaries. These are focused deterministic and output-safety checks, not a model-quality or performance benchmark.
+
+The production integration was verified with Tavily and `nvidia/Nemotron-3_5-Lightning` through Nebius Token Factory. Both built-in scenarios returned `mode=live`: the original itinerary produced a 48-day buffer and a 44-day calendar-boundary shortfall; the 45-day-earlier itinerary produced a 93-day buffer, no shortfall, and a one-day cushion. We have not used these two smoke tests to claim latency, comparative model quality, or broader task accuracy.
 
 The interface includes a **45-day trip shift** control. It reruns the same API and exact date engine, changes the sample buffer from 48 to 93 days, and propagates the result across seven graph nodes and two passport-dependent decision gates. This is an inspectable counterfactual, not a second pre-recorded animation.
 
 ## Hackathon technology
 
-- NVIDIA Nemotron 3 for semantic evidence-support classification and constrained explanation
+- NVIDIA Nemotron-3.5 Lightning (`nvidia/Nemotron-3_5-Lightning`) for semantic evidence-support classification and constrained explanation
 - Nebius Token Factory for OpenAI-compatible model inference
 - Tavily Search + Extract for live evidence retrieval from server-verified official domains
 - Next.js / Vinext / TypeScript for the product experience

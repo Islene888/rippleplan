@@ -1,6 +1,6 @@
 # RipplePlan — Devpost submission draft
 
-> Status: public demo and Tavily live path verified; Nebius/Nemotron production verification and final submission are still pending.
+> Status: public demo, Tavily, and Nebius/Nemotron production paths verified; the public video, team review, and final submission are still pending.
 
 ## Tagline
 
@@ -36,7 +36,7 @@ The product keeps three responsibilities separate: deterministic software owns d
 
 ## How we built it
 
-- **NVIDIA Nemotron 3** classifies whether varied, unstructured official excerpts semantically support the reviewed rule, then generates a constrained explanation from only the supplied scenario, calculation, and evidence. It cannot choose the date boundary or next action.
+- **NVIDIA Nemotron-3.5 Lightning** (`nvidia/Nemotron-3_5-Lightning`) classifies whether varied, unstructured official excerpts semantically support the reviewed rule, then generates a constrained explanation from only the supplied scenario, calculation, and evidence. It cannot choose the date boundary or next action.
 - **Nebius Token Factory** provides the OpenAI-compatible inference endpoint for the NVIDIA model.
 - **Tavily Search + Extract** run in parallel: Search discovers current guidance, while Extract reads up to three vetted official pages. Results must pass both a server-side domain allowlist and a passport-validity relevance check before appearing as live evidence.
 - **TypeScript and Next.js/Vinext** power the responsive interactive interface and server API.
@@ -44,6 +44,8 @@ The product keeps three responsibilities separate: deterministic software owns d
 - The public demo uses synthetic identity data and keeps all partner credentials on the server.
 
 When credentials or a partner API are unavailable, RipplePlan falls back to an explicitly labeled reference snapshot. A 90-second credit-protection cache is also visible in the UI as cached partner evidence, including its age.
+
+We verified the production integration with Tavily and `nvidia/Nemotron-3_5-Lightning` through Nebius Token Factory. Both built-in scenarios returned `mode=live`: the original itinerary produced a 48-day buffer and a 44-day calendar-boundary shortfall; the 45-day-earlier itinerary produced a 93-day buffer, no shortfall, and a one-day cushion. These were functional smoke tests, not a latency benchmark or a comparison with other models.
 
 ## Challenges we ran into
 
@@ -63,6 +65,8 @@ During live verification we found that provider-side domain filtering can still 
 - Added a counterfactual control that shifts the trip 45 days earlier, recomputes the buffer from 48 to 93 days, and clears the affected passport-dependent gates.
 - Kept consequential actions behind a review step.
 - Passed 13/13 cases against the same production calendar-month function, including leap-year, end-of-month, exact-boundary, and counterfactual dates.
+- Passed 8/8 regression cases for the server-side model-output numeric guard; this tests our validation layer, not Nemotron's overall quality.
+- Verified both built-in scenarios as fully live Tavily + Nemotron runs on Nebius Token Factory.
 - Produced a Cloudflare-compatible deployment with a server-side partner integration path.
 
 ## What we learned
@@ -88,8 +92,8 @@ RipplePlan organizes information and links to responsible authorities. It is not
 - **1:10–1:38 — Evidence:** Inspect the passport-validity gate, 48-day buffer, 44-day calendar-boundary shortfall, and attached official sources.
 - **1:38–1:58 — Counterfactual:** Move the trip 45 days earlier; show the buffer rise to 93 days and the graph clear both gates.
 - **1:58–2:16 — Action control:** Restore the risky dates, open the human-approved plan, and export the calendar reminder.
-- **2:16–2:40 — Architecture:** Versioned calendar-month rule + Tavily supporting evidence → Nemotron explanation on Nebius → evidence-linked graph.
-- **2:40–2:50 — Evaluation:** Show the 13/13 focused date-engine result and separately disclose partner live/reference status.
+- **2:16–2:40 — Architecture:** Versioned calendar-month rule + Tavily supporting evidence → Nemotron-3.5 Lightning explanation on Nebius → evidence-linked graph.
+- **2:40–2:50 — Evaluation:** Show the 13/13 focused date-engine result, 8/8 output-safety regression, and live partner status.
 - **2:50–3:00 — Close:** “A personal AI should not just remember your life. It should understand what changes next.”
 
 ## Submission checklist
@@ -101,7 +105,7 @@ RipplePlan organizes information and links to responsible authorities. It is not
 - [x] Deterministic evaluation script
 - [x] Partner API implementation
 - [x] Verified live Tavily run
-- [ ] Verified live NVIDIA Nemotron run on Nebius Token Factory
+- [x] Verified live NVIDIA Nemotron-3.5 Lightning run on Nebius Token Factory
 - [x] Public deployment URL: https://rippleplan-life-2026.islenezhao.chatgpt.site
 - [x] Public GitHub repository: https://github.com/Islene888/rippleplan
 - [ ] Public video, three minutes or shorter
