@@ -1,6 +1,6 @@
 # RipplePlan — Devpost submission draft
 
-> Status: draft only. The public demo and partner integration paths have been verified; the 2:39.48 v8 video candidate has been produced locally and matches the current product UI. The reviewed application, README, and Devpost draft files have been synchronized to the public GitHub repository. Public video upload, separate contribution confirmation from Mengyuan and Shubham, and final Devpost submission are still pending.
+> Status: draft only. The public demo and partner integration paths have been verified. The user listened to and approved the 2:30.90 v10 file as the current final local video candidate. The reviewed application, README, and this Devpost draft are synchronized to the public GitHub repository. Public video upload, separate contribution confirmation from Mengyuan and Shubham, and final Devpost submission are still pending.
 
 ## Tagline
 
@@ -47,7 +47,7 @@ The evidence inspector also exposes the actual validated transformation: one qua
 
 When credentials or a partner API are unavailable, RipplePlan falls back to an explicitly labeled reference snapshot. A 90-second credit-protection cache is also visible in the UI as cached partner evidence, including its age.
 
-We exercised the Tavily and `nvidia/Nemotron-3_5-Lightning` partner paths in production. In the v8 recorded run, two qualified official excerpts passed the source gate and Nemotron returned a validated support judgment, so RipplePlan correctly displayed `mode=live`. The same UI and API explicitly downgrade to `partial` or `reference` when either partner path cannot satisfy its validation boundary. The original itinerary produced a deterministic 48-day buffer and 44-day calendar-boundary shortfall, while the 45-day-earlier itinerary produced a 93-day buffer, no shortfall, and a one-day cushion. These were functional checks, not a latency benchmark or a comparison with other models.
+We exercised the Tavily and `nvidia/Nemotron-3_5-Lightning` partner paths in production. In the v10 visual capture, two qualified official excerpts passed the source gate and Nemotron returned a validated support judgment, so RipplePlan correctly displayed `mode=live`. The same UI and API explicitly downgrade to `partial` or `reference` when either partner path cannot satisfy its validation boundary. The original itinerary produced a deterministic 48-day buffer and 44-day calendar-boundary shortfall, while the 45-day-earlier itinerary produced a 93-day buffer, no shortfall, and a one-day cushion. These were functional checks, not a latency benchmark or a comparison with other models.
 
 ## Challenges we ran into
 
@@ -70,7 +70,7 @@ During live verification we found that provider-side domain filtering can still 
 - Kept consequential actions behind a review step.
 - Passed 13/13 cases against the same production calendar-month function, including leap-year, end-of-month, exact-boundary, and counterfactual dates.
 - Passed 8/8 regression cases for the server-side model-output numeric guard; this tests our validation layer, not Nemotron's overall quality.
-- Exercised both partner integration paths in production; the v8 capture shows a validated live run while the product preserves honest `partial` and `reference` fallback states.
+- Exercised both partner integration paths in production; the v10 visual capture shows a validated live run while the product preserves honest `partial` and `reference` fallback states.
 - Produced a Cloudflare-compatible deployment with a server-side partner integration path.
 
 ## What we learned
@@ -95,18 +95,18 @@ This is a roadmap, not functionality claimed by the prototype. Today RipplePlan 
 
 RipplePlan organizes information and links to responsible authorities. It is not legal advice, does not guarantee entry or eligibility, and does not submit applications, make purchases, or book travel. This demo supports only the shown U.S.-passport-to-France scenario and does not evaluate visas, stay length, passport age, or other entry conditions.
 
-## Current local video candidate (v8, 2:39.48; not yet uploaded)
+## Current final local video candidate (v10, 2:30.90; not yet uploaded)
 
 - **0:00–0:12 — Human stakes:** Alex's synthetic passport date puts a trip and non-refundable booking at risk.
-- **0:12–0:31 — Product and exact result:** Show the dependency graph, 48-day buffer, and 44-day calendar-boundary shortfall.
-- **0:31–0:53 — Propagation and provenance:** Show the failed gate ripple through the graph and the honest live/partial/reference labels.
-- **0:53–1:24 — Technical boundary:** Show the Tavily official-domain gate, real messy legal wording, bounded Nemotron JSON, and model-output rejection rules.
-- **1:24–1:50 — Deterministic decision:** Explain calendar-month arithmetic and rerun the same pipeline after a 45-day trip shift.
-- **1:50–2:11 — Edge case and tests:** Show the one-day cushion, 13/13 calendar cases, and 8/8 output-safety regressions.
-- **2:11–2:23 — Commercial roadmap:** Private global-mobility planning, one reviewed rule pack at a time; clearly labeled as future scope.
-- **2:23–2:39 — Human control:** Sources remain inspectable and every next action requires approval.
+- **0:12–0:29 — Product and exact result:** Show the dependency graph, 48-day buffer, and 44-day calendar-boundary shortfall.
+- **0:29–0:49 — Propagation and provenance:** Show the failed gate ripple through the graph and the honest live/partial/reference labels.
+- **0:49–1:20 — Technical boundary:** Show the Tavily official-domain gate, real messy legal wording, bounded Nemotron JSON, and model-output rejection rules.
+- **1:20–1:45 — Deterministic decision:** Explain calendar-month arithmetic and rerun the same pipeline after a 45-day trip shift.
+- **1:45–2:05 — Edge case and tests:** Show the one-day cushion, 13/13 calendar cases, and 8/8 output-safety regressions.
+- **2:05–2:17 — Commercial roadmap:** Private global-mobility planning, one reviewed rule pack at a time; clearly labeled as future scope.
+- **2:17–2:31 — Human control:** Sources remain inspectable and every next action requires approval.
 
-The local candidate is `../RipplePlan_Demo_v8.mp4` (1280×720, H.264/AAC, 48 kHz mono). It uses a mono 96 kbps Jenny source without speech-rate stretching, denoising, low-pass filtering, or dynamic loudness processing; the lossless segment assembly receives one final AAC encode. It measures -21.1 LUFS with a -0.5 dBFS true peak and passed a complete decode check. v7 is discarded and must not be used. No public video URL exists yet, so v8 must not be described as uploaded or submitted.
+The current final local candidate is `../RipplePlan_Demo_v10.mp4` (150.900 seconds; 1280×720, H.264/AAC, 48 kHz mono) and has no burned-in subtitles. Its audio was stream-copied directly from the original v6 master, with no new TTS, filtering, or audio re-encoding; the v5 and v6 master files have the same SHA-256. Across the decoded 150.88-second PCM interval, v10 and the v6 master also have identical SHA-256 values. The file passed a complete decode check, and the user approved it after listening. v9 was rejected because persistent hiss remained. v7 is the clear pipeline change point—14 online-generated segments were assembled—and v8/v9 continued using that newer segmented-TTS source. v10 is approved locally but must not be described as publicly uploaded or submitted until those separate steps are verified.
 
 ## Submission metadata and approvals
 
@@ -139,8 +139,10 @@ Contribution drafts must remain placeholders until each person verifies them:
 - [x] Public deployment URL: https://rippleplan-life-2026.islenezhao.chatgpt.site
 - [x] Public GitHub repository: https://github.com/Islene888/rippleplan
 - [x] Local validation rerun: 13/13 calendar cases, 8/8 model-output-safety cases, lint, and production build
-- [x] Local v8 video candidate: 2:39.48, 1280×720, H.264/AAC, 48 kHz mono; complete decode passed
-- [x] Reviewed application, README, and Devpost draft files synchronized to public GitHub `main` (content sync; local and browser-created commit histories differ)
+- [x] Local v10 final candidate produced and approved after listening: 2:30.90, 1280×720, H.264/AAC, 48 kHz mono, no burned-in subtitles; complete decode passed
+- [x] User listening confirmation for v10 audio
+- [x] Reviewed application and README synchronized to public GitHub `main` (content sync; local and browser-created commit histories differ)
+- [x] Current v10 Devpost-document update synchronized to public GitHub `main`
 - [ ] Public video, three minutes or shorter
 - [ ] Mengyuan contribution statement completed and confirmed by Mengyuan
 - [ ] Shubham contribution statement completed and confirmed by Shubham
