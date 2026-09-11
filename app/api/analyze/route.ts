@@ -1,4 +1,5 @@
 import { DAY_MS, evaluatePassportValidity } from '@/lib/passport-validity';
+import { hasDisallowedModelNumber } from '@/lib/nemotron-output-safety';
 
 type Scenario = {
   destination?: string;
@@ -430,7 +431,7 @@ function parseNemotronOutput(value: unknown, hasShortfall: boolean) {
       normalized.length < min
       || normalized.length > max
       || /[\u0000-\u001f\u007f-\u009f<>]/.test(normalized)
-      || /\d/.test(normalized)
+      || hasDisallowedModelNumber(normalized)
     ) {
       throw new Error(`${field} failed content validation`);
     }
@@ -490,7 +491,7 @@ async function reasonWithNemotron(
               'First classify whether the supplied excerpts semantically support the reviewed rule.',
               'Set evidenceSupport to exactly supports_rule when they do, otherwise exactly insufficient.',
               'Explain the evidence relationship only. Do not recommend or authorize any action.',
-              'Do not provide legal advice, guarantees, new facts, dates, or numbers.',
+              'Do not provide legal advice, guarantees, new facts, dates, or numbers other than restating the trusted three-month rule as "3 months" or "3-month".',
               'Return only one JSON object with exactly this schema:',
               '{"evidenceSupport":"supports_rule","summary":"30-180 character qualitative evidence caveat"}',
               'Do not return markdown, code fences, additional keys, or surrounding text.',

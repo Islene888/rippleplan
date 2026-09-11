@@ -1,4 +1,5 @@
 import { evaluatePassportValidity } from '../lib/passport-validity.ts';
+import { hasDisallowedModelNumber } from '../lib/nemotron-output-safety.ts';
 
 const cases = [
   ['2026-11-28', '2027-01-15', true, '2027-02-28', 'demo: calendar-month shortfall'],
@@ -35,7 +36,29 @@ const results = cases.map(([returnDate, expiryDate, expectedRisk, expectedRequir
   };
 });
 
+const modelOutputSafetyCases = [
+  ['The evidence restates the trusted 3 months validity requirement.', false, 'allows trusted 3 months phrase'],
+  ['The evidence supports the trusted 3-month validity requirement.', false, 'allows trusted 3-month phrase'],
+  ['The evidence supports the trusted three months validity requirement.', false, 'allows spelled-out phrase'],
+  ['The evidence claims a 13 months validity requirement.', true, 'rejects a different month count'],
+  ['The 3-month rule is described as a 90-day rule.', true, 'rejects an additional numeric claim'],
+  ['The 3 months requirement applies until 2027.', true, 'rejects a date alongside the trusted constant'],
+  ['The evidence references version 3 of the guidance.', true, 'rejects an unrelated use of the digit'],
+  ['The evidence describes a 3.0 months requirement.', true, 'rejects a decimal variant'],
+];
+
+const modelOutputSafetyResults = modelOutputSafetyCases.map(([summary, expectedDisallowed, label]) => {
+  const actualDisallowed = hasDisallowedModelNumber(summary);
+  return {
+    label,
+    expectedDisallowed,
+    actualDisallowed,
+    pass: expectedDisallowed === actualDisallowed,
+  };
+});
+
 const passed = results.filter((result) => result.pass).length;
+const modelOutputSafetyPassed = modelOutputSafetyResults.filter((result) => result.pass).length;
 const report = {
   benchmark: 'RipplePlan production calendar-month passport-validity gate',
   cases: results.length,
@@ -43,7 +66,14 @@ const report = {
   accuracy: passed / results.length,
   generatedAt: new Date().toISOString(),
   results,
+  modelOutputSafety: {
+    cases: modelOutputSafetyResults.length,
+    passed: modelOutputSafetyPassed,
+    results: modelOutputSafetyResults,
+  },
 };
 
 console.log(JSON.stringify(report, null, 2));
-if (passed !== results.length) process.exitCode = 1;
+if (passed !== results.length || modelOutputSafetyPassed !== modelOutputSafetyResults.length) {
+  process.exitCode = 1;
+}
