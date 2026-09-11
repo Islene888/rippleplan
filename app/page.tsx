@@ -266,7 +266,7 @@ export default function Home() {
             <span className="case-id">RP–TRAVEL–026</span>
           </div>
           <div className="engine-row">
-          <span>NVIDIA Nemotron 3</span>
+          <span>NVIDIA Nemotron-3.5 Lightning</span>
           <span>Nebius Token Factory</span>
           <span>Tavily Search + Extract</span>
           {runState === 'complete' && <span className={`mode-chip ${runModeClass}`}>{runModeLabel}</span>}
