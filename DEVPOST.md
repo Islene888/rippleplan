@@ -36,7 +36,7 @@ The product keeps three responsibilities separate: deterministic software owns d
 
 ## How we built it
 
-- **NVIDIA Nemotron 3** generates a constrained evidence explanation from only the supplied scenario, fixed calculation, and retrieved source excerpts. It cannot choose or change the next action.
+- **NVIDIA Nemotron 3** classifies whether varied, unstructured official excerpts semantically support the reviewed rule, then generates a constrained explanation from only the supplied scenario, calculation, and evidence. It cannot choose the date boundary or next action.
 - **Nebius Token Factory** provides the OpenAI-compatible inference endpoint for the NVIDIA model.
 - **Tavily Search + Extract** run in parallel: Search discovers current guidance, while Extract reads up to three vetted official pages. Results must pass both a server-side domain allowlist and a passport-validity relevance check before appearing as live evidence.
 - **TypeScript and Next.js/Vinext** power the responsive interactive interface and server API.
@@ -48,6 +48,8 @@ When credentials or a partner API are unavailable, RipplePlan falls back to an e
 ## Challenges we ran into
 
 The hardest problem was deciding what the model should not control. Date arithmetic, threshold comparison, and source URLs must remain inspectable and reproducible. We therefore separated deterministic calculations from model-generated language and treated every retrieved webpage as untrusted evidence rather than instructions.
+
+That boundary does not make the model decorative: official pages express the same requirement in inconsistent prose and page structures. Nemotron handles that fuzzy semantic layer by returning a strict support classification plus a bounded explanation; deterministic software owns the safety-critical calendar comparison and action mapping.
 
 We also constrained the hackathon scope to one complete passport-readiness workflow. This made it possible to build a coherent product experience instead of several unfinished administrative agents.
 

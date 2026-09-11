@@ -14,7 +14,7 @@ Most assistants return a checklist. RipplePlan returns an **evidence-linked depe
 
 - Personal facts and plans form the starting nodes.
 - Tavily Search discovers current guidance while targeted Tavily Extract reads up to three vetted official pages; the results are merged, relevance-checked, and a server-side allowlist rejects every off-domain link.
-- NVIDIA Nemotron on Nebius Token Factory turns retrieved evidence into constrained, structured explanations.
+- NVIDIA Nemotron on Nebius Token Factory performs a bounded semantic support check over varied official excerpts, then produces a constrained explanation.
 - A versioned deterministic rule owns three-calendar-month arithmetic and never delegates that calculation or the next action to retrieval or a model.
 - Every consequential action remains behind explicit human approval.
 
@@ -67,7 +67,7 @@ The interface includes a **45-day trip shift** control. It reruns the same API a
 
 ## Hackathon technology
 
-- NVIDIA Nemotron 3 for constrained evidence reasoning
+- NVIDIA Nemotron 3 for semantic evidence-support classification and constrained explanation
 - Nebius Token Factory for OpenAI-compatible model inference
 - Tavily Search + Extract for live evidence retrieval from server-verified official domains
 - Next.js / Vinext / TypeScript for the product experience
