@@ -1,6 +1,6 @@
 # RipplePlan — Devpost submission draft
 
-> Status: submission copy in progress. Do not claim live partner execution until production keys are configured and verified.
+> Status: public demo and Tavily live path verified; Nebius/Nemotron production verification and final submission are still pending.
 
 ## Tagline
 
@@ -38,7 +38,7 @@ The product keeps three responsibilities separate: deterministic software owns d
 
 - **NVIDIA Nemotron 3** generates a constrained evidence explanation from only the supplied scenario, fixed calculation, and retrieved source excerpts. It cannot choose or change the next action.
 - **Nebius Token Factory** provides the OpenAI-compatible inference endpoint for the NVIDIA model.
-- **Tavily Search + Extract** run in parallel: Search discovers current guidance, while Extract reads three vetted official pages. A second server-side allowlist rejects any off-domain result even if provider filtering is noisy.
+- **Tavily Search + Extract** run in parallel: Search discovers current guidance, while Extract reads up to three vetted official pages. Results must pass both a server-side domain allowlist and a passport-validity relevance check before appearing as live evidence.
 - **TypeScript and Next.js/Vinext** power the responsive interactive interface and server API.
 - A shared deterministic UTC date engine calculates the validity buffer and exact three-calendar-month boundary.
 - The public demo uses synthetic identity data and keeps all partner credentials on the server.
@@ -98,10 +98,10 @@ RipplePlan organizes information and links to responsible authorities. It is not
 - [x] README and setup instructions
 - [x] Deterministic evaluation script
 - [x] Partner API implementation
-- [ ] Verified live Tavily run
+- [x] Verified live Tavily run
 - [ ] Verified live NVIDIA Nemotron run on Nebius Token Factory
-- [ ] Public deployment URL
-- [ ] Public GitHub repository
+- [x] Public deployment URL: https://rippleplan-life-2026.islenezhao.chatgpt.site
+- [x] Public GitHub repository: https://github.com/Islene888/rippleplan
 - [ ] Public video, three minutes or shorter
 - [ ] Team contribution statement reviewed by both members
 - [ ] Final Devpost submission confirmed by both members

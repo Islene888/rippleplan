@@ -2,6 +2,8 @@
 
 **One change. See the whole ripple.**
 
+[Live demo](https://rippleplan-life-2026.islenezhao.chatgpt.site) · [Public source](https://github.com/Islene888/rippleplan)
+
 RipplePlan is an evidence-backed personal AI concept that maps how a change in an important document or plan affects downstream decisions. The focused hackathon demo uses a synthetic U.S. passport and a France travel scenario: it evaluates one passport-validity gate, retrieves current supporting guidance, explains the result, and creates a human-reviewed next-action plan.
 
 > Demo data only. RipplePlan is an information-organizing prototype, not legal advice. Always verify requirements with the responsible authority.
@@ -11,7 +13,7 @@ RipplePlan is an evidence-backed personal AI concept that maps how a change in a
 Most assistants return a checklist. RipplePlan returns an **evidence-linked dependency graph**:
 
 - Personal facts and plans form the starting nodes.
-- Tavily Search discovers current guidance while targeted Tavily Extract reads three vetted official pages; the results are merged and a server-side allowlist rejects every off-domain link.
+- Tavily Search discovers current guidance while targeted Tavily Extract reads up to three vetted official pages; the results are merged, relevance-checked, and a server-side allowlist rejects every off-domain link.
 - NVIDIA Nemotron on Nebius Token Factory turns retrieved evidence into constrained, structured explanations.
 - A versioned deterministic rule owns three-calendar-month arithmetic and never delegates that calculation or the next action to retrieval or a model.
 - Every consequential action remains behind explicit human approval.

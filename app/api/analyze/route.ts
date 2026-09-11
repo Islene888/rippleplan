@@ -310,6 +310,13 @@ function parseOfficialUrl(value: unknown) {
   }
 }
 
+function supportsPassportValidityRule(description: string) {
+  const normalized = description.toLowerCase();
+  const mentionsThreeMonths = /\b(?:three|3)\s+months?\b/.test(normalized);
+  const mentionsValidity = /\bpassport\b|\bvalidity\b|\bvalid\b/.test(normalized);
+  return mentionsThreeMonths && mentionsValidity;
+}
+
 async function searchOfficialSources(query: string, apiKey: string): Promise<EvidenceSource[]> {
   const data = await fetchPartnerJson(
     'https://api.tavily.com/search',
@@ -341,10 +348,12 @@ async function searchOfficialSources(query: string, apiKey: string): Promise<Evi
     const score = typeof result.score === 'number' && Number.isFinite(result.score) ? result.score : 1;
     const officialUrl = parseOfficialUrl(result.url);
     if (!officialUrl || score < 0.45 || seenUrls.has(officialUrl.url)) continue;
+    const description = cleanText(result.content, 'Official travel guidance', 320);
+    if (!supportsPassportValidityRule(description)) continue;
     seenUrls.add(officialUrl.url);
     sources.push({
       title: cleanText(result.title, officialUrl.hostname, 140),
-      description: cleanText(result.content, 'Official travel guidance', 320),
+      description,
       domain: officialUrl.hostname,
       url: officialUrl.url,
     });
@@ -384,10 +393,12 @@ async function extractReferenceSources(query: string, apiKey: string): Promise<E
     if (!officialUrl || seenUrls.has(officialUrl.url)) continue;
     const reference = referenceSources.find((source) => new URL(source.url).hostname === officialUrl.hostname);
     if (!reference) continue;
+    const description = cleanText(result.raw_content, reference.description, 320);
+    if (!supportsPassportValidityRule(description)) continue;
     seenUrls.add(officialUrl.url);
     sources.push({
       title: reference.title,
-      description: cleanText(result.raw_content, reference.description, 320),
+      description,
       domain: officialUrl.hostname,
       url: officialUrl.url,
     });
