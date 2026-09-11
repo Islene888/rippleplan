@@ -375,6 +375,15 @@ export default function Home() {
               </div>
             </div>
 
+            {runState === 'complete' && usesOfficialSources && (
+              <div className={`model-check ${analysis.integrations.nemotron ? 'live' : 'fallback'}`}>
+                <div><span>NEMOTRON SEMANTIC CHECK</span><strong>{analysis.integrations.nemotron ? 'SUPPORTED' : 'FALLBACK'}</strong></div>
+                <p>{analysis.integrations.nemotron
+                  ? 'Matched varied official wording to the reviewed rule; deterministic code kept control of dates and actions.'
+                  : 'Model output was unavailable or rejected; the inspected date result remains deterministic.'}</p>
+              </div>
+            )}
+
             <div className="source-list">
               <div className="source-title"><span>Sources for this node</span><b>{selectedSources.length}</b></div>
               {selectedSources.slice(0, 3).map((source, index) => (

@@ -143,6 +143,13 @@ a { color: inherit; text-decoration: none; }
 .confidence-track i { display: block; height: 100%; width: 0; background: var(--green); transition: width .8s .2s ease; }
 .confidence-card.resolved .confidence-track i { background: var(--green); }
 .confidence-card small { font-size: 8px; color: #89918e; }
+.model-check { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #f8faf7; }
+.model-check > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.model-check span { color: #6f7975; font: 7px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .08em; }
+.model-check strong { color: var(--green); font: 8px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .06em; }
+.model-check p { margin: 6px 0 0; color: #68736f; font-size: 8px; line-height: 1.45; }
+.model-check.fallback { background: #fbf7ee; }
+.model-check.fallback strong { color: #a06b21; }
 .reason-box { margin-top: 12px; padding: 12px; border-radius: 10px; background: #f1efea; display: flex; gap: 10px; }
 .reason-icon { flex: 0 0 auto; width: 23px; height: 23px; border-radius: 50%; display: grid; place-items: center; background: #e2e5df; color: #77817c; font-size: 11px; font-weight: 800; }
 .reason-box strong { display: block; font-size: 10px; }
